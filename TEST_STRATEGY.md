@@ -77,6 +77,42 @@ The claim lifecycle is enforced by `ClaimStatus.canTransitionTo()`:
 4. Terminal state (`CLOSED → anything`) → expect 400
 5. Concurrent updates → check for data corruption
 
+### 2.3 UpdateClaimStatusUseCase
+
+**Responsibilities:**
+- Look up admin user → enforce ADMIN role
+- Look up claim → not-found handling
+- Call `claim.updateStatus(newStatus)` → enforces transition rules
+- Save updated claim
+- Publish events (CDC or direct, based on config flag)
+- Increment metrics counter
+
+**Risks / bugs identified:**
+
+🔴 **CONFIRMED BUG: `changedBy` is never passed to `Claim.updateStatus()`**
+- Line 48: `claim.updateStatus(command.newStatus())` — no admin ID
+- Use case HAS `command.adminUserId()` (line 36, 65) — available but not passed
+- Result: `ClaimStatusChanged.changedBy` = claim owner, not acting admin
+- Contract violation: `claim-events-api.yml` documents `changedBy` as "The admin user who changed the status"
+- Impact: audit trail cannot identify which admin actioned a claim
+- Test: assert current (incorrect) behavior; fix later
+
+🟠 **Observation: `cdcEnabled` defaults to `true`**
+- CDC path is primary; direct-publish path only used if explicitly disabled
+- Setup guide runs direct-publish? (Confirm actual app config)
+- Risk: events silently missing if CDC not running
+
+🟠 **Observation: Events published within transaction**
+- `claim.getDomainEvents().forEach(eventPublisher::publishEvent)` runs inside `@Transactional`
+- If transaction rolls back, event may have already published
+- Consider `@TransactionalEventListener(phase = AFTER_COMMIT)` — worth noting
+
+🟡 **No null checks on `command`**
+- Null command or null adminUserId → NPE (would be 500, not 400)
+
+**Tests to write:** 10 tests (RBAC, not-found, valid/invalid transitions, changedBy bug, CDC toggle, metrics).
+
+
 ## 3. What I Chose to Test
 (To be filled)
 
