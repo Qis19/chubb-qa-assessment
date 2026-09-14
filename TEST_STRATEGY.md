@@ -5,7 +5,7 @@
 Three-tier insurance claims management app:
 - **UI**: Next.js 16 + React (port 3001)
 - **BFF Service**: Spring Boot (port 8090)
-- **Claims Service**: Spring Boot (port 8080)
+- **Claims Service**: Spring Boot (port 8080, it's free port)
 - **Infrastructure**: Kafka, Keycloak, PostgreSQL, Redis
 
 Domain: Insurance claims — creation, review, approval/rejection lifecycle.
@@ -31,6 +31,44 @@ The claim lifecycle is enforced by `ClaimStatus.canTransitionTo()`:
 - ✅ `CLOSED` is terminal (correct).
 - 🚨 **KEY RISK:** Does the use case layer actually enforce `canTransitionTo()`? If not, any status can be forced via API.
 - 🚨 **Race condition risk:** Concurrent status updates — is there optimistic locking?
+
+### 2.2 Claim Domain (`Claim.java`)
+
+**Validation rules (constructor):**
+- All fields required (non-null)
+- `incidentDate` not in future
+- `description`: 10–1000 chars (trimmed)
+- `incidentLocation`: 5–200 chars (trimmed)
+- `claimAmount`: > 0 and <= 1,000,000
+
+**State transitions:**
+- `updateStatus(newStatus)` enforces `ClaimStatus.canTransitionTo()`
+- Emits `ClaimStatusChanged` domain event
+
+**Risks / bugs identified:**
+
+🔴 **Bug: `changedBy` is wrong in audit trail**
+- Line 112–118: `ClaimStatusChanged` event uses `this.userId` (claim owner) for `changedBy`
+- Should be the acting admin's ID
+- `updateStatus()` doesn't even receive the admin's ID
+- Impact: audit trail cannot identify which admin actioned a claim
+- Test: assert current behavior (documenting bug), then fix
+
+🟠 **`reconstitute()` bypasses validation**
+- Intentional for persistence, but means invalid DB data loads silently
+- Worth documenting in strategy
+
+🟠 **Timezone risk in `LocalDate.now()`**
+- Server timezone vs user timezone could reject valid "today" incidents
+- Boundary test: incidentDate = today
+
+🟡 **No `equals()` / `hashCode()`**
+- Object identity only
+
+🟡 **Minor: two `Instant.now()` calls in constructor**
+- `createdAt` and event `occurredAt` may differ
+
+**Tests to write:** 25–28 tests covering validation, transitions, events, and the `changedBy` bug.
 
 **Tests to write:**
 1. Valid transitions → expect 200
