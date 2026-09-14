@@ -234,6 +234,19 @@ I tested the rejection path, the happy path, field integrity, and auto-generated
 **Key learning:** The use case delegates all validation to the Claim domain
 constructor - so this use case test focuses on orchestration, not validation rules.
 
+### 3.5 Playwright API tests - health.spec.ts (3 tests)
+
+**What it does:** Checks the 3 services are alive (claims, BFF, UI).
+
+**Why:** Foundation — if the app isn't running, no other test can work.
+
+**Tests:**
+- Claims Service health endpoint returns UP
+- BFF Service health endpoint returns UP
+- UI homepage loads
+
+**Runtime:** ~1.6 seconds
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
