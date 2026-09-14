@@ -263,6 +263,21 @@ response. The cookie approach is more secure (prevents XSS token theft).
 
 **Runtime:** ~1.1 seconds
 
+### 3.7 Playwright API tests - claims.spec.ts (3 tests)
+
+**What it does:** Verifies that claim endpoints are protected - all require
+authentication.
+
+**Tests:**
+- GET /api/claims without auth -> 401
+- POST /api/claims without auth -> 401
+- GET /api/claims/{id} without auth -> 401
+
+**Why:** Proves the security boundary works — no claim data is accessible
+without a valid login.
+
+**Runtime:** ~0.5 seconds
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
