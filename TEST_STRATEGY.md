@@ -219,6 +219,21 @@ the admin ID from the command, but never passes it to claim.updateStatus().
 cdcEnabled = false. Tests must capture events via the eventPublisher mock,
 not from the returned Claim entity. This shaped how the changedBy test was written.
 
+### 3.4 CreateClaimUseCaseTest - 4 tests
+
+**Explanation:** When someone creates a new claim, the system checks
+the user exists, then creates the claim with all business rules applied.
+I tested the rejection path, the happy path, field integrity, and auto-generated IDs.
+
+**Tests cover:**
+- Unknown user -> UserNotFoundException
+- Valid command -> claim created with SUBMITTED status
+- All provided fields persisted correctly
+- Claim ID auto-generated
+
+**Key learning:** The use case delegates all validation to the Claim domain
+constructor - so this use case test focuses on orchestration, not validation rules.
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
