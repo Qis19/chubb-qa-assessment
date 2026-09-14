@@ -278,6 +278,19 @@ without a valid login.
 
 **Runtime:** ~0.5 seconds
 
+### 3.8 Playwright E2E tests - login.spec.ts (2 tests)
+
+Opens a real browser and tests the actual login flow.
+
+**Tests:**
+- Homepage loads and shows login form
+- Invalid credentials stay on login page (not redirected)
+
+**Why:** The API tests verify the backend. This E2E test verifies the real
+browser experience — form renders, buttons work, flow behaves correctly.
+
+**Runtime:** ~4.6 seconds
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
