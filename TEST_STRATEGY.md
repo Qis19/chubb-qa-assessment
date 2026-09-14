@@ -188,7 +188,22 @@ The claim lifecycle is enforced by `ClaimStatus.canTransitionTo()`:
 
 
 ## 3. What I Chose to Test
-(To be filled)
+
+### 3.1 ClaimStatusTest — 35 tests
+Full 5x5 transition matrix (valid, invalid, self-transitions, terminal state).
+
+### 3.2 ClaimTest — 26 tests
+All constructor validation rules with boundary-value analysis:
+- Null handling for all fields
+- Future date rejection
+- Description length (10-1000 chars)
+- Location length (5-200 chars)
+- Amount boundaries (0.01, 0, 1M, 1M.01)
+- changedBy bug characterization
+
+### 3.3 UpdateClaimStatusUseCaseTest — 6 tests
+RBAC (unknown/non-admin), not-found, invalid/valid transitions,
+changedBy bug characterization.
 
 ## 4. What I Deliberately Left Out
 (To be filled)
