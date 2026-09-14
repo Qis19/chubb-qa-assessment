@@ -247,6 +247,22 @@ constructor - so this use case test focuses on orchestration, not validation rul
 
 **Runtime:** ~1.6 seconds
 
+### 3.6 Playwright API tests - auth.spec.ts (3 tests)
+
+**What it does:** Tests the login system and auth boundary.
+
+**Tests:**
+- Valid credentials return user info (email, role, userId)
+- Invalid credentials rejected (400/401/403)
+- Unauthenticated request to protected endpoint rejected (401/403)
+
+**Finding:** The login endpoint returns user info as JSON and sets the auth
+token as an HTTP-only cookie (rather than returning a JSON token). My initial
+test expected a `token` field — this was corrected after seeing the actual
+response. The cookie approach is more secure (prevents XSS token theft).
+
+**Runtime:** ~1.1 seconds
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
