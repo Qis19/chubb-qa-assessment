@@ -146,6 +146,47 @@ The claim lifecycle is enforced by `ClaimStatus.canTransitionTo()`:
 
 **Tests to write:** 10 tests (user not found, valid creation, event publishing, CDC toggle, null handling, metrics).
 
+### 2.5 Controllers and Security (Claims Service)
+
+#### ClaimController.java
+
+**Endpoints:** POST /api/claims, GET /api/claims/{id}, GET /api/claims
+
+**Findings:**
+- 🟠 No `@PreAuthorize` — relies on use case-level userId filtering for cross-user protection
+- 🟡 `BigDecimal.valueOf(request.getClaimAmount())` — double→BigDecimal conversion, precision risk
+- 🟡 Malformed UUID in JWT subject → 500
+
+#### AdminClaimsController.java
+
+**Endpoints:** GET /api/admin/claims, PATCH /api/admin/claims/{id}/status
+
+**Findings:**
+- ✅ `@PreAuthorize("hasRole('ADMIN')")` on both endpoints
+- 🔴 **CONFIRMS changedBy bug**: `adminUserId` IS passed to use case (line 84), but use case doesn't forward to `claim.updateStatus()`
+- 🟡 N+1 user lookups in `toAdminClaimResponse()`
+- 🟠 `ClaimStatus.valueOf()` on invalid status value → 500 (should be 400)
+
+#### SecurityConfig.java (Claims Service)
+
+**Findings:**
+- ✅ CSRF disabled, stateless sessions (correct for JWT API)
+- ✅ Keycloak realm_access roles mapped to Spring authorities
+- 🚨 `anyRequest().permitAll()` — anything outside `/api/**` and `/actuator/**` is public
+- 🟠 Debug-level JWT logging could leak tokens in logs
+- 🟡 No role hierarchy (ADMIN doesn't inherit CLAIMANT)
+- 🟡 No CORS config (verify BFF handles it)
+
+**Tests to write:**
+1. Unauthenticated request to `/api/claims` → 401
+2. Non-admin request to `/api/admin/claims` → 403
+3. Admin request to `/api/admin/claims` → 200
+4. Invalid status value → 400 (not 500)
+5. Invalid UUID in path → 400
+6. GET /error without auth (if security allows) → check behavior
+7. Cross-user claim access → 403/404
+
+
 ## 3. What I Chose to Test
 (To be filled)
 
