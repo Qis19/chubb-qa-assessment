@@ -291,6 +291,18 @@ browser experience — form renders, buttons work, flow behaves correctly.
 
 **Runtime:** ~4.6 seconds
 
+### 3.9 Playwright E2E tests - claim-creation.spec.ts (2 tests)
+
+**What it does:** Tests the claim submission flow through a real browser.
+
+**Tests:**
+- Claimant can log in and reach claims page
+- Claimant can navigate to create-claim page
+
+**Why:** Proves the entire login + navigation flow works end-to-end.
+
+**Runtime:** ~5.3 seconds
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
