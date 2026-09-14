@@ -201,9 +201,23 @@ All constructor validation rules with boundary-value analysis:
 - Amount boundaries (0.01, 0, 1M, 1M.01)
 - changedBy bug characterization
 
-### 3.3 UpdateClaimStatusUseCaseTest — 6 tests
-RBAC (unknown/non-admin), not-found, invalid/valid transitions,
-changedBy bug characterization.
+### 3.3 UpdateClaimStatusUseCaseTest - 6 tests
+
+**Why:** The use case is the actual security boundary - RBAC is enforced here,
+not in the controller. It's also where the changedBy bug originates: it has
+the admin ID from the command, but never passes it to claim.updateStatus().
+
+**Tests cover:**
+- Unknown admin user -> UnauthorizedException
+- Non-admin user -> UnauthorizedException (RBAC boundary)
+- Claim not found -> ClaimNotFoundException
+- Invalid transition (SUBMITTED -> APPROVED) -> InvalidStatusTransitionException
+- Valid transition (SUBMITTED -> UNDER_REVIEW) -> status updated, save called
+- changedBy bug -> captured via eventPublisher mock (characterization test)
+
+**Key learning:** The use case clears domain events after publishing when
+cdcEnabled = false. Tests must capture events via the eventPublisher mock,
+not from the returned Claim entity. This shaped how the changedBy test was written.
 
 ## 4. What I Deliberately Left Out
 (To be filled)
