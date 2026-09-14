@@ -112,6 +112,39 @@ The claim lifecycle is enforced by `ClaimStatus.canTransitionTo()`:
 
 **Tests to write:** 10 tests (RBAC, not-found, valid/invalid transitions, changedBy bug, CDC toggle, metrics).
 
+### 2.4 CreateClaimUseCase
+
+**Responsibilities:**
+- Verify user exists
+- Delegate creation + validation to `Claim` domain constructor
+- Save to repository
+- Publish events (CDC or direct)
+- Increment metrics
+
+**Risks / observations:**
+
+🟠 **Null field inputs cause `NullPointerException` (500)**
+- If `command.incidentDate()` etc. is null → `Claim` constructor's `Objects.requireNonNull` throws NPE
+- Expected: 400 Bad Request, not 500
+- Worth a test
+
+🟠 **CDC toggle: events silently dropped if CDC enabled but Debezium down**
+- `app.events.cdc-enabled` defaults to `true`
+- Setup guide runs... (confirm actual config)
+- Risk: claims created but no event published
+
+🟠 **Events published within transaction**
+- Same as UpdateClaimStatusUseCase
+- Consider AFTER_COMMIT listener
+
+🟡 **No duplicate claim detection**
+- Same user can submit identical claims twice
+
+🟡 **No explicit validation before Claim construction**
+- Relies on constructor's validation + NPEs
+- Could provide cleaner error messages
+
+**Tests to write:** 10 tests (user not found, valid creation, event publishing, CDC toggle, null handling, metrics).
 
 ## 3. What I Chose to Test
 (To be filled)
