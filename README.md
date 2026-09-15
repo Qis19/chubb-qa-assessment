@@ -52,19 +52,14 @@ QA test suite for the Chubb claims management application — \*\*87 automated t
 
 
 
-| Type | Tool | Count | Location |
-
+|| Type | Tool | Count | Location |
 |------|------|-------|----------|
-
-| Unit tests | JUnit 5 + Mockito | 71 | `demo-app/code/claims-service/src/test/java/` |
-
-| Integration — API | Playwright | 9 | `demo-app/tests/api/` |
-
-| Integration — E2E | Playwright | 4 | `demo-app/tests/e2e/` |
-
-| Component tests | Vitest + Testing Library | 3 | `demo-app/code/demo-app-ui/src/features/admin/components/\_\_tests\_\_/` |
-
-| \*\*Total\*\* | | \*\*87\*\* | |
+| Unit tests | JUnit 5 + Mockito | 71 | demo-app/code/claims-service/src/test/java/ |
+| Contract tests (Kafka) | JUnit 5 + Embedded Kafka | 6 | demo-app/code/*/src/test/java/.../contract/ |
+| Integration — API | Playwright | 9 | demo-app/tests/api/ |
+| Integration — E2E | Playwright | 4 | demo-app/tests/e2e/ |
+| Component tests | Vitest + Testing Library | 3 | demo-app/code/demo-app-ui/src/features/admin/components/__tests__/ |
+| **Total** | | **93** | |
 
 
 

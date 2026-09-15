@@ -101,13 +101,14 @@ The BFF is covered indirectly via Playwright API tests. A dedicated BFF unit tes
 
 ## 7. Numbers to Remember
 
-- 87 tests total
+- 93 tests total
 - 71 unit (JUnit)
+- 6 contract (JUnit + Embedded Kafka)
 - 13 integration (Playwright — 9 API + 4 E2E)
 - 3 component (Vitest)
-- 1 real bug found
-- 17+ git commits
-- All 3 required test categories covered
+- 2 bugs found (changedBy + Kafka schema violation)
+- 20+ git commits
+- All 3 required test categories + contract tests covered
 
 ---
 

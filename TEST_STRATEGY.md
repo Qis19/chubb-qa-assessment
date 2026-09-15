@@ -321,11 +321,101 @@ whole app through a real browser.
 
 **Runtime:** ~241ms
 
+### 3.11 Kafka Contract Tests — 6 tests
+
+**Producer tests** (claims-service, 2 tests):
+- ClaimSubmitted envelope violates its committed schema
+- ClaimStatusChanged envelope violates its committed schema
+
+**Consumer tests** (bff-service, 4 tests):
+- Parses claim-submitted envelope from real publisher format
+- Parses claim-status-changed envelope from real publisher format
+- Parses CDC create envelope using real Postgres column name (claim_id)
+- Parses CDC update envelope using real Postgres column names
+
+**Bug found:** The producer publishes a nested envelope (`{ eventType, eventId, payload: {...} }`) but the committed schemas describe a flat structure (`{ eventId, claimId, userId, incidentDate, claimAmount, occurredAt }` at top level). Producer and consumer agree with each other, but neither matches the documented contract. Schema validation is enabled by default — if a claim were submitted with validation on, it would fail at runtime.
+
+**Tooling:** JUnit 5 + Spring Embedded Kafka (no Docker required).
+
 ## 4. What I Deliberately Left Out
-(To be filled)
+
+I focused on the required test categories plus Kafka contract tests. These were skipped:
+
+- **BFF-service unit tests** — the BFF is already covered by the Playwright API tests and the Kafka consumer contract tests.
+- **Testcontainers** — nice to have, but the Playwright tests already prove the live stack works.
+- **Full claim wizard E2E** — I tested login and navigation, not the full multi-step form.
+- **Controller tests** — controllers just pass through to use cases that are already tested.
+- **Load testing** — not required.
+- **Visual regression tests** — optional, skipped.
 
 ## 5. Bugs / Issues Found
-(To be filled)
+
+### Bug 1: Audit trail records the wrong user
+
+**Where:** `Claim.java`, inside `updateStatus()`
+
+**What:** Every time a claim's status changes, the event says the claim owner made the change. But it should say the admin who actually did it. The method never receives the admin's ID, so it can't set it correctly.
+
+**Evidence:**
+- `Claim.updateStatus()` doesn't accept an admin ID parameter
+- `UpdateClaimStatusUseCase` has the admin ID (`command.adminUserId()`) but never passes it down
+- The API spec says `changedBy` should be the admin, so this breaks the contract
+
+**Impact:** Audit logs can't tell which admin actioned a claim.
+
+**Test:** `UpdateClaimStatusUseCaseTest.changedByIsClaimOwnerNotAdmin_bug()` — asserts the current (wrong) behavior.
+
+**Fix (not done):** Add a `changedBy` parameter to `updateStatus()` and pass the admin ID from the use case.
+
+---
+
+### Bug 2: Kafka producer doesn't match its own schema
+
+**Where:** `KafkaDomainEventPublisher.java`, in `buildEnvelope()`
+
+**What:** The producer sends events in a nested format: `{ eventType, eventId, payload: { ... } }`. But the JSON schemas in the project describe a flat format with `claimId`, `userId`, and `incidentDate` at the top level. They don't match.
+
+**Evidence:**
+- Producer puts `claimId` and `userId` inside a `payload` object
+- Schema expects them at top level
+- Several required fields are missing completely (`incidentDate`, `claimAmount`, `occurredAt`)
+
+**Impact:** If schema validation were turned on in production, every claim submission would fail. The app works today only because validation is off in the deployed config.
+
+**Test:** `ClaimEventProducerContractTest` — forces validation on and shows it fails.
+
+**Fix (not done):** Either change the producer to send flat messages or update the schemas to describe the nested format. It's a design decision.
+
+---
+
+### Observation: Login response is a cookie, not a token
+
+The login endpoint returns user info as JSON and sets the auth token as an HTTP-only cookie. Not a bug — this is more secure. My first test expected a `token` field and failed; I fixed the test to match reality.
+
+---
+
+### Infrastructure: Kafka failed to start after restart
+
+Kafka wouldn't start with a `NodeExistsException` after the machine restarted. Zookeeper still had the old registration. Fixed by running `podman volume prune -f` and restarting.
+
+Not an app bug — just an issue with running Kafka + Zookeeper locally.
 
 ## 6. What I'd Do With More Time
-(To be filled)
+
+In priority order:
+
+1. **Fix the two bugs** — pass the admin ID through to `Claim.updateStatus()`, and align the Kafka producer and schemas. Tests are already written and ready to flip once fixed.
+
+2. **Add BFF-service unit tests** — the WebSocket handler and Keycloak token handling have no direct tests today.
+
+3. **Full claim submission E2E** — fill the whole multi-step wizard and verify the claim shows up in the list.
+
+4. **Testcontainers** — spin up Postgres and Kafka in CI without manual Docker.
+
+5. **Claim ownership tests** — `GetClaimUseCase` checks that a user can only see their own claims, but there's no test for it.
+
+6. **Load testing** — K6 scripts for the claim submission endpoint.
+
+7. **More component tests** — cover the claim wizard, filters, and dashboard.
+
+8. **Visual regression tests** — Storybook + Chromatic.
