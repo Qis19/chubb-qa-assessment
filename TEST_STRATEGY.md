@@ -303,6 +303,24 @@ browser experience — form renders, buttons work, flow behaves correctly.
 
 **Runtime:** ~5.3 seconds
 
+### 3.10 Vitest component tests - admin-claims-table.test.tsx (3 tests)
+
+**What it does:** Renders the AdminClaimsTable component in isolation and
+verifies its behavior with fake data.
+
+**Tests:**
+- Renders all 6 column headers (Claim ID, User ID, Incident Date, Amount, Status, Actions)
+- Shows one row per claim with IDs truncated to 8 characters
+- Handles empty state — headers visible, no rows
+
+**Why:** Component tests are fast (milliseconds), don't need a browser, and
+catch UI-level bugs early. This complements the E2E tests which test the
+whole app through a real browser.
+
+**Tooling:** Vitest + @testing-library/react + jsdom
+
+**Runtime:** ~241ms
+
 ## 4. What I Deliberately Left Out
 (To be filled)
 
